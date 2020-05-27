@@ -5,7 +5,7 @@ Job runner for Deno that supports cron syntax.
 ## Example
 
 ```javascript
-import { Cron } from "https://github.com/jchen1/crontab-deno/cron.ts";
+import { Cron } from "https://deno.land/x/crontab/cron.ts";
 
 const cron = new Cron();
 
