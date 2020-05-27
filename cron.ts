@@ -107,14 +107,14 @@ export class Cron {
     this.jobs = [];
   }
 
-  add = (schedule: string, fn: () => any) => {
+  add(schedule: string, fn: () => any) {
     if (
       !schedule.match(/((?:[\d*-/]+|[A-Za-z]{3}) ){4}(?:[\d*-/]+|[A-Za-z]{3})/)
     ) {
       throw new Error(`invalid crontab: ${schedule}!`);
     }
     this.jobs.push({ schedule, fn });
-  };
+  }
 
   async start() {
     const now = new Date();
