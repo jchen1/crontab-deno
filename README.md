@@ -32,7 +32,7 @@ cron.start();
 - step values (`*/5`)
 - month/day-of-week strings (use the first three characters, case-insensitive)
 
-## Unsupported (PRs welcome!)
+## Not yet supported (PRs welcome!)
 
 - seconds, years
 - `@` syntax (both `@every` and `@yearly`)
