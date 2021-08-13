@@ -103,6 +103,7 @@ export function timeForCron(now: Date, schedule: string) {
 
 export class Cron {
   private lastest_id = 0n;
+  private running = true;
 
   jobs: CronJob[];
 
@@ -143,7 +144,7 @@ export class Cron {
         if (rm.length > 0) {
           removed.push(rm[0]);
         }
-        if (++lim == limit) break
+        if (++lim == limit) break;
       }
     }
     return removed;
@@ -177,7 +178,17 @@ export class Cron {
     return this.removeBy((job) => job.fn == fn);
   }
 
+  stop() {
+    this.running = false;
+  }
+
+  // deno-lint-ignore require-await
   async start() {
+    if (!this.running) { // this call may schedule by setTimeout
+      this.running = true;
+      return;
+    }
+
     const now = new Date();
     setTimeout(() => this.start(), (61 - now.getSeconds()) * 1000);
 
