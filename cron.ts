@@ -1,4 +1,5 @@
 type CronJob = {
+  id: bigint;
   schedule: string;
   fn: () => any;
 };
@@ -101,22 +102,93 @@ export function timeForCron(now: Date, schedule: string) {
 }
 
 export class Cron {
+  private lastest_id = 0n;
+  private running = true;
+
   jobs: CronJob[];
 
   constructor() {
     this.jobs = [];
   }
 
-  add(schedule: string, fn: () => any) {
+  /**
+   * @param schedule cron syntax to schedule a job
+   * @param fn a function to execute
+   * @returns identifier for cron job
+   */
+  add(schedule: string, fn: () => any): bigint {
     if (
       !schedule.match(/((?:[\d*-/]+|[A-Za-z]{3}) ){4}(?:[\d*-/]+|[A-Za-z]{3})/)
     ) {
       throw new Error(`invalid crontab: ${schedule}!`);
     }
-    this.jobs.push({ schedule, fn });
+    const id = this.lastest_id += 1n;
+    this.jobs.push({ id, schedule, fn });
+    return id;
   }
 
+  /**
+   *
+   * @param filter a function used to remove jobs if function return true job will be removed
+   * @param limit number of job to remove default is Number.MAX_VALUE
+   * @returns removed job
+   */
+  removeBy(filter: (job: CronJob) => boolean, limit = Number.MAX_VALUE): CronJob[] {
+    const jobs = this.jobs;
+    const removed = [];
+    let lim = 0;
+    for (let index = jobs.length - 1; index >= 0; --index) {
+      const job = jobs[index];
+      if (filter(job)) {
+        const rm = jobs.splice(index, 1);
+        if (rm.length > 0) {
+          removed.push(rm[0]);
+        }
+        if (++lim == limit) break;
+      }
+    }
+    return removed;
+  }
+
+  /**
+   * remove job by id
+   * @param id job id to remove
+   * @returns removed job
+   */
+  removeById(id: bigint): CronJob | null {
+    const removed = this.removeBy((job) => job.id == id, 1)
+    return removed.length == 0 ? null : removed[0];
+  }
+
+  /**
+   * remove job by schedule
+   * @param schedule job schedule to remove
+   * @returns removed jobs
+   */
+  removeBySchedule(schedule: string): CronJob[] {
+    return this.removeBy((job) => job.schedule == schedule);
+  }
+
+  /**
+   * remove job by function
+   * @param fn job fn to remove
+   * @returns removed jobs
+   */
+  removeByFunction(fn: () => any): CronJob[] {
+    return this.removeBy((job) => job.fn == fn);
+  }
+
+  stop() {
+    this.running = false;
+  }
+
+  // deno-lint-ignore require-await
   async start() {
+    if (!this.running) { // this call may schedule by setTimeout
+      this.running = true;
+      return;
+    }
+
     const now = new Date();
     setTimeout(() => this.start(), (61 - now.getSeconds()) * 1000);
 
